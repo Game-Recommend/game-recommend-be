@@ -128,4 +128,3 @@ def test_review_timeout_preserves_candidates_without_inventing_summary(
     assert response.games[0].review is None
     assert any("리뷰 요약 호출 실패" in warning for warning in response.warnings)
     assert services.calls[-1] == "answer"
-
