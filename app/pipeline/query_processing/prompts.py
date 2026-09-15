@@ -34,6 +34,13 @@ General rules:
      "RTX 3060 8GB VRAM" means gpu="RTX 3060".
    - Keep the full VRAM statement in hardware.raw_text.
      VRAM capacity must never become hardware.ram_gb.
+   - "PC", "computer", "laptop", and "노트북" are device or
+     platform descriptions, not operating systems.
+   - Never set hardware.os to "PC", "computer", "laptop",
+     or "노트북".
+   - If only a PC or laptop platform is mentioned without
+     a CPU model, GPU model, system RAM capacity, or actual OS,
+     set hardware=null and record the platform separately.
 
 2. genres, excluded_genres, preferences
    - For this service, genres is one unified list of game
@@ -77,6 +84,18 @@ General rules:
      and does not set max_price_krw.
    - Never invent an IGDB ID. The game-search integration
      resolves category names to IGDB fields and IDs.
+   - Preserve descriptive preferences such as "가벼운 게임",
+     "초보자에게 쉬운 게임", "스토리가 중요한 게임",
+     and "Steam 평가가 좋은 게임".
+   - Store each distinct preference as a separate list item.
+     Do not combine multiple preferences into one string.
+   - Example:
+     "스토리와 Steam 평가가 중요하고 턴제는 별로야"
+      means preferences=[
+        "스토리 중요",
+        "Steam 평가 중요",
+        "턴제 비선호"
+      ].
 
 3. players, connection, play_mode
    - players is the total number of players including the user.
@@ -100,6 +119,13 @@ General rules:
    - "3만 원 이하" means 30000.
    - "3만 원 미만" means 29999.
    - "무료 게임만" means 0.
+   - Set max_price_krw only when the question explicitly uses
+     an upper-bound expression such as "이하", "미만", "최대",
+     "넘지 않는", or a clearly stated maximum budget.
+   - Expressions ending in "원대", such as "3만 원대" or
+     "2만 원대 정도", describe a vague price range.
+     They must always produce max_price_krw=null.
+   - Never convert "3 만원대" to 30000 or 39999.
    - Do not turn "3만 원대" into a precise maximum.
    - "무료면 좋겠다" does not set max_price_krw.
 
@@ -109,6 +135,17 @@ General rules:
    - Do not substitute one for the other.
    - "30 minutes to 1 hour per session" means
      max_session_minutes=60.
+   - Time associated with "한 판", "한 번", "한 세션",
+     "한 번 플레이할 때", or "per session" must populate
+     only max_session_minutes.
+   - Do not also copy a session duration into
+     max_playtime_hours.
+   - Set max_playtime_hours only when the user explicitly
+     refers to total playtime, completion time, finishing
+     the game, or reaching the ending.
+   - Example:
+     "한 판에 1시간 30분 이하" means
+     max_session_minutes=90 and max_playtime_hours=null.
 
 6. platforms, recommendation_count
    - Extract an explicitly stated platform independently
