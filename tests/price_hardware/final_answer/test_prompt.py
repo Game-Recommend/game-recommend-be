@@ -102,7 +102,7 @@ def test_prompt_states_no_candidates_and_default_warning_lines():
 
     assert "[추천 후보 0개]" in prompt
     assert "모든 조건을 충족한다고 확인된 후보가 없습니다" in prompt
-    assert "요청 개수: 3개" in prompt
+    assert "요청 개수: 5개" in prompt  # GameConditions의 기본 추천 개수
     assert prompt.rstrip().endswith("[경고]\n- 없음")
 
 
