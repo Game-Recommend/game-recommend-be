@@ -1,0 +1,139 @@
+{
+  "repeats": 3,
+  "cases": 200,
+  "case_runs": 600,
+  "stable_pass": 177,
+  "flaky": 3,
+  "stable_fail": 20,
+  "accuracy_strict": 0.885,
+  "accuracy_by_run": 0.8917,
+  "errors": 0,
+  "axes_by_run": {
+    "fields": 574,
+    "preferences": 591,
+    "invariants": 561
+  },
+  "by_family": {
+    "combined": {
+      "cases": 20,
+      "stable_pass": 13,
+      "flaky": 0,
+      "stable_fail_ids": [
+        "Q181",
+        "Q182",
+        "Q183",
+        "Q188",
+        "Q191",
+        "Q198",
+        "Q199"
+      ],
+      "flaky_ids": [],
+      "accuracy_strict": 0.65
+    },
+    "count": {
+      "cases": 15,
+      "stable_pass": 15,
+      "flaky": 0,
+      "stable_fail_ids": [],
+      "flaky_ids": [],
+      "accuracy_strict": 1.0
+    },
+    "genres": {
+      "cases": 36,
+      "stable_pass": 33,
+      "flaky": 0,
+      "stable_fail_ids": [
+        "Q149",
+        "Q150",
+        "Q151"
+      ],
+      "flaky_ids": [],
+      "accuracy_strict": 0.9167
+    },
+    "hardware": {
+      "cases": 30,
+      "stable_pass": 29,
+      "flaky": 0,
+      "stable_fail_ids": [
+        "Q102"
+      ],
+      "flaky_ids": [],
+      "accuracy_strict": 0.9667
+    },
+    "no_dup": {
+      "cases": 14,
+      "stable_pass": 12,
+      "flaky": 0,
+      "stable_fail_ids": [
+        "Q169",
+        "Q175"
+      ],
+      "flaky_ids": [],
+      "accuracy_strict": 0.8571
+    },
+    "players": {
+      "cases": 30,
+      "stable_pass": 25,
+      "flaky": 3,
+      "stable_fail_ids": [
+        "Q061",
+        "Q081"
+      ],
+      "flaky_ids": [
+        "Q060",
+        "Q077",
+        "Q083"
+      ],
+      "accuracy_strict": 0.8333
+    },
+    "price": {
+      "cases": 30,
+      "stable_pass": 25,
+      "flaky": 0,
+      "stable_fail_ids": [
+        "Q016",
+        "Q017",
+        "Q018",
+        "Q019",
+        "Q020"
+      ],
+      "flaky_ids": [],
+      "accuracy_strict": 0.8333
+    },
+    "time": {
+      "cases": 25,
+      "stable_pass": 25,
+      "flaky": 0,
+      "stable_fail_ids": [],
+      "flaky_ids": [],
+      "accuracy_strict": 1.0
+    }
+  },
+  "flaky_cases": [
+    "Q060",
+    "Q077",
+    "Q083"
+  ],
+  "stable_fail_cases": [
+    "Q016",
+    "Q017",
+    "Q018",
+    "Q019",
+    "Q020",
+    "Q061",
+    "Q081",
+    "Q102",
+    "Q149",
+    "Q150",
+    "Q151",
+    "Q169",
+    "Q175",
+    "Q181",
+    "Q182",
+    "Q183",
+    "Q188",
+    "Q191",
+    "Q198",
+    "Q199"
+  ]
+}
