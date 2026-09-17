@@ -36,6 +36,11 @@
 
 ## 파이프라인
 
+![게임 추천 서비스 처리 흐름](docs/game_recommend_flow.png)
+
+질의 한 건이 추천 답변이 되기까지의 7단계입니다. 고칠 때는 [SVG](docs/game_recommend_flow.svg)를 씁니다.
+아래는 같은 흐름에서 Tool 호출 순서를 자세히 본 것입니다.
+
 ```text
 질문
   ↓
@@ -344,6 +349,7 @@ HTTP 서버 없이 전체 흐름을 확인하려면 저장소 루트에서 실�
 pyproject.toml             의존성·빌드·pytest·Ruff·Vercel 설정
 Makefile                   개발 서버·검증 명령
 TEAM.md                    역할별 담당 파일·연결 계약
+docs/game_recommend_flow.*  서비스 처리 흐름 다이어그램 (PNG 문서용 · SVG 수정용)
 app/
 ├─ main.py                  FastAPI 앱. 시작 시 조립, 종료 시 클라이언트 정리
 ├─ assembly.py              .env 설정으로 역할별 실제 구현체를 조립
