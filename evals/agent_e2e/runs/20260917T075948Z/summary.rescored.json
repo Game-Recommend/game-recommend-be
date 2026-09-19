@@ -11,6 +11,14 @@
     "answer_format": 50
   },
   "empty_recommendations": 19,
+  "overlooked_empty": 0,
+  "with_recommendations": {
+    "scored": 81,
+    "passed": 29,
+    "latency_median": 13.55,
+    "grounded_mean": 3.2,
+    "linked_mean": 3.81
+  },
   "latency_seconds": {
     "median": 11.57,
     "max": 41.73
@@ -230,8 +238,12 @@
     }
   },
   "rescored": {
-    "rule": "answer_format: 추천 0개면 2~6문장, 아니면 3~6문장",
+    "rules": [
+      "answer_format: 추천 0개면 2~6문장, 아니면 3~6문장",
+      "constraints: 판정을 통과한 후보가 있는데 추천이 0개면 위반"
+    ],
     "original_passed": 30,
+    "original_constraints": 98,
     "original_answer_format": 32
   }
 }
