@@ -13,13 +13,17 @@ from app.schemas.price import PriceQuote, PriceResult
 from app.schemas.recommendation import EvaluatedGame, RecommendationResponse
 from evals.agent_e2e.judge import build_evidence
 from evals.agent_e2e.rescore import rescore_record
+from evals.agent_e2e.run_eval import summarize
 from evals.agent_e2e.score import (
     BASE_STAGES,
     check_answer_format,
     check_constraints,
+    check_overlooked_candidates,
     check_trajectory,
     count_sentences,
     detect_profile,
+    passing_count,
+    score_case,
 )
 
 DATA = json.loads((Path(__file__).parent / "dataset.json").read_text(encoding="utf-8"))
@@ -150,6 +154,37 @@ def test_empty_recommendation_with_warning_passes():
     assert check_constraints(item, resp) == []
 
 
+def judged(detail):
+    return [*OK_STAGES, {"t": 7.0, "stage": "조건 판정", "status": "completed", "detail": detail}]
+
+
+def test_passing_count_reads_both_repo_formats():
+    assert passing_count(judged("통과 25개 중 2개 추천, 제외 5개")) == 25  # 에이전트
+    assert passing_count(judged("통과 28개 중 5개 선택, 제외 2개")) == 28  # 원본
+    # 통과 후보 수를 남기기 전의 에이전트 기록과, 조건 판정까지 가지 못한 기록
+    assert passing_count(judged("추천 0개, 제외 5개")) is None
+    assert passing_count(OK_STAGES) is None
+
+
+def test_empty_recommendation_with_passing_candidates_fails():
+    empty = response([], warnings=["조건을 충족한 후보가 없습니다."])
+    problems = check_overlooked_candidates(empty, judged("통과 25개 중 0개 추천, 제외 5개"))
+    assert problems == ["통과 후보가 25개인데 추천이 0개다"]
+
+    record = score_case(BY_ID["E031"], empty, judged("통과 25개 중 0개 추천, 제외 5개"))
+    assert record["constraints_passed"] is False and record["passed"] is False
+    assert record["passing_count"] == 25
+
+
+def test_empty_recommendation_is_fine_when_nothing_passed_or_count_is_unknown():
+    empty = response([], warnings=["조건을 충족한 후보가 없습니다."])
+    assert check_overlooked_candidates(empty, judged("통과 0개 중 0개 추천, 제외 30개")) == []
+    assert check_overlooked_candidates(empty, judged("추천 0개, 제외 5개")) == []
+    # 추천을 냈으면 통과 후보가 더 남아 있어도 문제가 아니다
+    some = response([game()])
+    assert check_overlooked_candidates(some, judged("통과 25개 중 1개 추천, 제외 5개")) == []
+
+
 def test_excluded_genre_in_recommendation_fails():
     item = next(entry for entry in DATA if entry["expect"].get("exclude_genres") == ["Horror"])
     problems = check_constraints(item, response([game(themes=["Horror", "Action"])]))
@@ -251,7 +286,39 @@ def test_empty_recommendation_may_answer_in_two_sentences():
     assert any("3~6문장" in problem for problem in check_answer_format(with_game))
 
 
-def test_rescore_recomputes_only_answer_format():
+def test_rescore_applies_the_overlooked_rule_from_the_recorded_timeline():
+    base = {
+        "id": "E1",
+        "constraints_passed": True,
+        "trajectory_passed": True,
+        "answer_format_passed": True,
+        "passed": True,
+        "constraint_problems": [],
+        "recommended": [],
+        "answer": "조건에 맞는 게임이 없습니다. 모든 후보가 예산을 넘었습니다.",
+        "stages": judged("통과 14개 중 0개 선택, 제외 16개"),
+    }
+    rescored = rescore_record(base)
+    assert rescored["constraint_problems"] == ["통과 후보가 14개인데 추천이 0개다"]
+    assert rescored["constraints_passed"] is False and rescored["passed"] is False
+    assert rescored["passing_count"] == 14
+    # 이미 새 규칙으로 채점된 기록을 다시 채점해도 같은 위반이 두 번 들어가지 않는다
+    assert rescore_record(rescored) == rescored
+    # 통과 후보가 없었거나, 추천을 냈거나, 조건 판정까지 가지 못한 기록은 그대로다
+    nothing = rescore_record({**base, "stages": judged("통과 0개 중 0개 선택, 제외 30개")})
+    assert nothing["constraints_passed"] is True and nothing["passing_count"] == 0
+    chosen = {**base, "recommended": ["게임 가"], "answer": "게임 가를 추천합니다. 둘. 셋."}
+    assert rescore_record(chosen)["passed"] is True
+    assert rescore_record({**base, "stages": OK_STAGES})["passing_count"] is None
+    # 기록에 다른 조건 위반이 있으면 그대로 남는다
+    other = {**base, "constraints_passed": False, "constraint_problems": ["예산 초과"]}
+    assert rescore_record(other)["constraint_problems"] == [
+        "예산 초과",
+        "통과 후보가 14개인데 추천이 0개다",
+    ]
+
+
+def test_rescore_recomputes_answer_format():
     two = "조건에 맞는 게임이 없습니다. 모든 후보가 예산을 넘었습니다."
     base = {
         "id": "E1",
@@ -270,6 +337,58 @@ def test_rescore_recomputes_only_answer_format():
     assert rescore_record({**base, "recommended": ["조건"]})["answer_format_passed"] is False
     failed = {"id": "E2", "error": "PipelineStageError: x", "passed": False}
     assert rescore_record(failed) == failed
+
+
+def test_summary_reports_questions_with_recommendations_separately():
+    def record(id_, count, passed, seconds, grounded, passing=None):
+        return {
+            "id": id_,
+            "family": "count",
+            "passed": passed,
+            "constraints_passed": passed,
+            "trajectory_passed": True,
+            "answer_format_passed": True,
+            "recommended_count": count,
+            "passing_count": passing,
+            "seconds": seconds,
+            "judge": {"grounded_score": grounded, "linked_score": grounded},
+        }
+
+    summary = summarize(
+        [
+            record("E1", 2, True, 12.0, 4),
+            record("E2", 3, False, 14.0, 2),
+            # 빈 추천은 빨리 끝나고 심판 점수가 만점이라 전체 수치를 끌어올린다
+            record("E3", 0, True, 5.0, 5, passing=0),
+            record("E4", 0, False, 6.0, 5, passing=25),
+            {"id": "E5", "family": "count", "passed": False, "error": "X: y", "seconds": 1.0},
+        ]
+    )
+
+    assert summary["passed"] == 2 and summary["empty_recommendations"] == 2
+    assert summary["overlooked_empty"] == 1
+    assert summary["judge"]["grounded_mean"] == 4.0
+    assert summary["with_recommendations"] == {
+        "scored": 2,
+        "passed": 1,
+        "latency_median": 14.0,
+        "grounded_mean": 3.0,
+        "linked_mean": 3.0,
+    }
+
+
+def test_summary_without_recommendations_or_judge():
+    summary = summarize(
+        [{"id": "E1", "family": "count", "passed": True, "recommended_count": 0, "seconds": 3.0}]
+    )
+    assert summary["with_recommendations"] == {
+        "scored": 0,
+        "passed": 0,
+        "latency_median": None,
+        "grounded_mean": None,
+        "linked_mean": None,
+    }
+    assert summary["overlooked_empty"] == 0
 
 
 def test_empty_answer_fails():
